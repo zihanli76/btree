@@ -7,6 +7,8 @@
  *   2. Insert(int value) -> nodeInsert(int value, int node)
  *   3. Display(int node)
  *
+ *   Name: Zihan Li
+ *   NUID: 001083359
  */
 
 final class Btree {
