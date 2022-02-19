@@ -58,10 +58,8 @@ final class Btree {
    *    - If -2 is returned, the value already exists.
    */
   public void Insert(int value) {
-    //if(nodeInsert(value, root) == -1) cntValues++;
     int res = nodeInsert(value, root);
-    System.out.println("return: " + res + "\n");
-    if(res == -1) cntValues++;
+    if(res == -1 || res != -2) cntValues++;
   }
 
 
@@ -81,19 +79,12 @@ final class Btree {
    *
    */
   private boolean nodeLookup(int value, int pointer) {
-//    for (int i = 0; i < nodes.length; i++) {
-//      System.out.print(nodes[i] + " ");
-//    }
-//    System.out.println();
-    System.out.println();
-    System.out.println("finding " + value + " in node " + pointer); // =======================================================
     if (nodes[pointer].children == null) {
 
       return findVal(value, pointer) != -1;
     } else {
       if (findVal(value, pointer) != -1) return true;
       int child = findChild(value, pointer);
-      System.out.println("Child found is " + child); // =======================================================
       return nodeLookup(value, child);
     }
   }
@@ -106,9 +97,9 @@ final class Btree {
    */
   private int nodeInsert(int value, int pointer) {
     Node curr = nodes[pointer];
-    System.out.println("pointer: " + pointer + "  val: " + value); // =======================================================
+    if (nodeLookup(value, pointer))
+      return -2;
     if (!isLeaf(curr)) { // The node is no leaf node
-      System.out.println("no leaf"); // =======================================================
       int valPos = findVal(value, pointer);
       if (valPos != -1)
         return -2;
@@ -124,10 +115,6 @@ final class Btree {
         // insert child pointer to the current node
         insertChild(newChild, pointer);
 
-        System.out.print("updated children for node " + pointer + ": "); // =======================================================
-        for (int i = 0; i < nodes[pointer].children.length; i++ )System.out.print(nodes[pointer].children[i]);
-        System.out.println();
-
         return -1;
       } else { //no space is left
         // insert middle value to the current node
@@ -142,7 +129,6 @@ final class Btree {
           newRoot.size = 1;
           checkSize();
           root = cntNodes; // reset root pointer
-          System.out.println("new root ptr: " + cntNodes);
           nodes[cntNodes++] = newRoot;
           newRoot.values = new int[NODESIZE];
           newRoot.values[0] = midValue;
@@ -156,18 +142,13 @@ final class Btree {
         return -1;
       }
     } else { // The current node is a leaf node
-      System.out.println("leaf"); // =======================================================
       int valPos = findVal(value, pointer);
       if (valPos != -1) { // the value is found in the leaf node
-        System.out.println("value is found"); // =======================================================
         return -2;
       } else if (nodes[pointer].size < NODESIZE) { // some space is left
-        System.out.println("some space is left, insert"); // =======================================================
         insertVal(value, pointer);
-        printArray(pointer); // =======================================================
         return -1;
       } else { // no space is left
-        System.out.println("split");
         int rightChild = insertValAndSplit(value, pointer);
         if (pointer == root) {
           // create a new root
@@ -175,7 +156,6 @@ final class Btree {
           newRoot.size = 1;
           checkSize();
           root = cntNodes; // reset root pointer
-          System.out.println("new root ptr: " + cntNodes);
           nodes[cntNodes++] = newRoot;
           newRoot.values = new int[NODESIZE];
           newRoot.values[0] = midValue;
@@ -228,13 +208,6 @@ final class Btree {
   }
 
   private int findVal(int value, int pointer) {
-    System.out.print("Node " + pointer + " value: ");
-    printArray(pointer);
-    if (nodes[pointer].children != null) {
-      System.out.print("Node " + pointer + " children: ");
-      printChildren(pointer);
-    }
-
     for (int i = 0; i < NODESIZE; i++) {
       if (nodes[pointer].values[i] == value)
         return i;
@@ -252,14 +225,6 @@ final class Btree {
     int[] left = new int[NODESIZE];
     int[] right = new int[NODESIZE];
     int[] newValues = insertToArray(value, pointer);
-
-    //======
-    for (int i = 0; i < newValues.length; i++) {
-      System.out.print(newValues[i] + " ");
-    }
-    System.out.println();
-    //======
-
 
     int leftsize = (NODESIZE + 1) / 2;
     for (int i = 0; i < leftsize; i++) {
@@ -282,7 +247,6 @@ final class Btree {
     newNode.values = right;
     newNode.size = NODESIZE - leftsize;
     checkSize();
-    System.out.println("new node ptr: " + cntNodes);
     nodes[cntNodes] = newNode;
     cntNodes++;
     return cntNodes - 1;
@@ -331,25 +295,6 @@ final class Btree {
     int newChildFirst = nodes[newChild].values[0];
     int i, idx = 0;
     int[] newChildren = new int[NODESIZE + 2];
-
-    //======
-    System.out.print("new child first is " + nodes[newChild].values[0] + " old children first is : ");
-    for (int j = 0; j < nodes[pointer].children.length; j++) {
-      System.out.print(nodes[nodes[pointer].children[j]].values[0] + " ");
-    }
-    System.out.println();
-    //======
-
-    //======
-    System.out.print("new child is " + newChild + " old children is : ");
-    for (int j = 0; j < nodes[pointer].children.length; j++) {
-      System.out.print(nodes[pointer].children[j] + " ");
-    }
-    System.out.println();
-    //======
-
-    System.out.println("inserting child, size is " + nodes[pointer].size); // =========
-
     int len = split? NODESIZE + 1 : nodes[pointer].size;
     for (i = 0; i < len; i++) { // size is already added 1
       int child = nodes[pointer].children[i];
@@ -366,14 +311,6 @@ final class Btree {
     while (i <= NODESIZE)
       newChildren[idx++] = nodes[pointer].children[i++];
 
-    //======
-    System.out.print("new children is : ");
-    for (int j = 0; j < newChildren.length; j++) {
-      System.out.print(newChildren[j] + " ");
-    }
-    System.out.println();
-    //======
-
     return newChildren;
   }
 
@@ -385,17 +322,9 @@ final class Btree {
     for (int i = 0; i < leftsize; i++) {
       left[i] = newChildren[i];
     }
-    for (int i = 0; i < NODESIZE + 1 - leftsize; i++) {
+    for (int i = 0; i < NODESIZE + 2 - leftsize; i++) {
       right[i] = newChildren[leftsize + i];
     }
-
-//    //======
-//    System.out.print("new children for split is : ");
-//    for (int i = 0; i < newChildren.length; i++) {
-//      System.out.print(newChildren[i] + " ");
-//    }
-//    System.out.println();
-//    //======
 
     // reset children of original node to left
     nodes[pointer].children = left;
@@ -403,21 +332,6 @@ final class Btree {
     // reset children of new node to right 
     nodes[cntNodes - 1].children = right;
   }
-
-  private void printArray(int pointer) {
-    for (int i = 0; i < nodes[pointer].size; i++) {
-      System.out.print(nodes[pointer].values[i] + " ");
-    }
-    System.out.println();
-  }
-
-  private void printChildren(int pointer) {
-    for (int i = 0; i < nodes[pointer].children.length; i++) {
-      System.out.print(nodes[pointer].children[i] + " ");
-    }
-    System.out.println();
-  }
-
 }
 
 /*
